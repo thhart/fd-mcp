@@ -12,6 +12,7 @@ from mcp.types import TextContent, Tool
 
 # Detect fd binary name (fd on most systems, fdfind on Debian/Ubuntu)
 FD_CMD = shutil.which("fd") or shutil.which("fdfind")
+RG_CMD = shutil.which("rg")
 
 server = Server("fd-mcp")
 
@@ -86,14 +87,178 @@ def run_fd(cmd: list[str], max_results: int = 100) -> str:
         return f"Error: {e}"
 
 
+def run_fd_with_content_search(
+    search_pattern: str,
+    file_pattern: str = "",
+    path: str = ".",
+    extension: str | None = None,
+    file_type: str | None = None,
+    hidden: bool = False,
+    no_ignore: bool = False,
+    case_sensitive: bool = False,
+    context_lines: int = 0,
+    max_results: int = 100,
+) -> str:
+    """Search for content within files found by fd using ripgrep."""
+    if not RG_CMD:
+        return "Error: ripgrep (rg) not found. Please install ripgrep for content search."
+
+    # Build fd command to find files
+    fd_cmd = [FD_CMD]
+    if hidden:
+        fd_cmd.append("--hidden")
+    if no_ignore:
+        fd_cmd.append("--no-ignore")
+    if file_type:
+        fd_cmd.extend(["--type", file_type])
+    if extension:
+        fd_cmd.extend(["--extension", extension])
+    if file_pattern:
+        fd_cmd.append(file_pattern)
+    fd_cmd.append(path)
+
+    # Build ripgrep command
+    rg_cmd = [RG_CMD]
+    if not case_sensitive:
+        rg_cmd.append("--ignore-case")
+    if context_lines > 0:
+        rg_cmd.extend(["--context", str(context_lines)])
+    rg_cmd.extend(["--line-number", "--heading", "--color=never"])
+    rg_cmd.append(search_pattern)
+
+    try:
+        # Get file list from fd
+        fd_result = subprocess.run(
+            fd_cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if not fd_result.stdout.strip():
+            return "No files found matching the file pattern."
+
+        files = fd_result.stdout.strip().split("\n")
+
+        # Search content with ripgrep in found files
+        rg_cmd.extend(files[:max_results])
+
+        rg_result = subprocess.run(
+            rg_cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if rg_result.returncode == 0:
+            output = rg_result.stdout.strip()
+            if len(files) > max_results:
+                output += f"\n\n... searched {max_results} of {len(files)} files (truncated)"
+            return output if output else "No content matches found."
+        elif rg_result.returncode == 1:
+            return "No content matches found in the files."
+        else:
+            return f"Error: {rg_result.stderr}"
+
+    except subprocess.TimeoutExpired:
+        return "Error: Command timed out after 30 seconds"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def run_fd_exec(
+    command: str,
+    pattern: str = "",
+    path: str = ".",
+    file_type: str | None = None,
+    extension: str | None = None,
+    hidden: bool = False,
+    no_ignore: bool = False,
+    max_files: int = 100,
+) -> str:
+    """Execute a command on files found by fd (replacement for find -exec)."""
+    # Build fd command
+    fd_cmd = build_fd_command(
+        pattern=pattern,
+        path=path,
+        file_type=file_type,
+        extension=extension,
+        hidden=hidden,
+        no_ignore=no_ignore,
+    )
+
+    try:
+        # Get file list
+        fd_result = subprocess.run(
+            fd_cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if not fd_result.stdout.strip():
+            return "No files found."
+
+        files = fd_result.stdout.strip().split("\n")[:max_files]
+
+        # Execute command on each file
+        results = []
+        for file in files:
+            cmd = command.replace("{}", file)
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.stdout or result.stderr:
+                results.append(f"{file}:\n{result.stdout}{result.stderr}")
+
+        if results:
+            output = "\n\n".join(results)
+            if len(files) == max_files:
+                output += f"\n\n... processed {max_files} files (limit reached)"
+            return output
+        else:
+            return f"Command executed on {len(files)} files (no output)"
+
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def find_recent_files(
+    path: str = ".",
+    hours: int = 24,
+    file_type: str | None = None,
+    extension: str | None = None,
+    max_results: int = 50,
+) -> str:
+    """Find recently modified files using fd."""
+    # Build fd command with change-newer-than
+    cmd = [FD_CMD, "--changed-within", f"{hours}h"]
+
+    if file_type:
+        cmd.extend(["--type", file_type])
+    if extension:
+        cmd.extend(["--extension", extension])
+
+    cmd.append(path)
+
+    return run_fd(cmd, max_results)
+
+
 @server.list_tools()
 async def list_tools() -> list[Tool]:
     """List available fd tools."""
-    return [
+    tools = [
         Tool(
             name="fd_search",
-            description="Search for files and directories using fd (fast find alternative). "
-            "Supports regex patterns, file type filtering, and respects .gitignore by default.",
+            description="PREFERRED ALTERNATIVE to 'find' command. Search for files and directories using fd "
+            "(5-10x faster than find). Use this instead of bash 'find' commands. Supports regex patterns, "
+            "file type filtering, respects .gitignore by default, and uses parallel execution. "
+            "Examples: find Python files (extension='py'), find by name pattern (pattern='config.*'), "
+            "list directories (type='d'). Replaces: find, locate commands.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -153,8 +318,160 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="fd_search_content",
+            description="PREFERRED ALTERNATIVE to 'find -exec grep' command. Search for content within files "
+            "using fd+ripgrep (extremely fast). Use this instead of 'find . -exec grep' commands. "
+            "Combines file filtering (by extension, pattern, type) with content search in a single operation. "
+            "Example: find 'TODO' in Python files (search_pattern='TODO', extension='py'). "
+            "Replaces: find -exec grep, find | xargs grep commands.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "search_pattern": {
+                        "type": "string",
+                        "description": "Text or regex pattern to search for in file contents (required)",
+                    },
+                    "file_pattern": {
+                        "type": "string",
+                        "description": "Limit to files matching this name pattern (e.g., 'test_*', '*.config.*')",
+                        "default": "",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Directory to search in",
+                        "default": ".",
+                    },
+                    "extension": {
+                        "type": "string",
+                        "description": "Filter by file extension (e.g., 'py', 'js', 'rs')",
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": ["f", "d", "l", "x"],
+                        "description": "Filter by type: f=file (default), d=directory, l=symlink, x=executable",
+                    },
+                    "hidden": {
+                        "type": "boolean",
+                        "description": "Include hidden files",
+                        "default": False,
+                    },
+                    "no_ignore": {
+                        "type": "boolean",
+                        "description": "Don't respect .gitignore files",
+                        "default": False,
+                    },
+                    "case_sensitive": {
+                        "type": "boolean",
+                        "description": "Use case-sensitive search",
+                        "default": False,
+                    },
+                    "context_lines": {
+                        "type": "integer",
+                        "description": "Number of context lines to show around matches",
+                        "default": 0,
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of files to search",
+                        "default": 100,
+                    },
+                },
+                "required": ["search_pattern"],
+            },
+        ),
+        Tool(
+            name="fd_exec",
+            description="PREFERRED ALTERNATIVE to 'find -exec' command. Execute a command on files found by fd. "
+            "Use this instead of 'find -exec' or 'find | xargs' commands. Faster and safer than find -exec. "
+            "Use {} in command as placeholder for filename. "
+            "Example: run command on Python files (command='wc -l {}', extension='py'). "
+            "Replaces: find -exec, find | xargs commands.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "Command to execute on each file. Use {} as placeholder for filename (required)",
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "description": "Search pattern to filter files (regex)",
+                        "default": "",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Directory to search in",
+                        "default": ".",
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": ["f", "d", "l", "x"],
+                        "description": "Filter by type: f=file, d=directory, l=symlink, x=executable",
+                    },
+                    "extension": {
+                        "type": "string",
+                        "description": "Filter by file extension",
+                    },
+                    "hidden": {
+                        "type": "boolean",
+                        "description": "Include hidden files",
+                        "default": False,
+                    },
+                    "no_ignore": {
+                        "type": "boolean",
+                        "description": "Don't respect .gitignore",
+                        "default": False,
+                    },
+                    "max_files": {
+                        "type": "integer",
+                        "description": "Maximum number of files to process",
+                        "default": 100,
+                    },
+                },
+                "required": ["command"],
+            },
+        ),
+        Tool(
+            name="fd_recent_files",
+            description="Find recently modified files using fd. Faster alternative to 'find -mtime' or 'find -newermt'. "
+            "Useful for finding recent changes in a codebase. "
+            "Example: files changed in last 24 hours (hours=24, extension='py'). "
+            "Replaces: find -mtime, find -newermt commands.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Directory to search in",
+                        "default": ".",
+                    },
+                    "hours": {
+                        "type": "integer",
+                        "description": "Find files modified within this many hours",
+                        "default": 24,
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": ["f", "d", "l", "x"],
+                        "description": "Filter by type: f=file, d=directory, l=symlink, x=executable",
+                    },
+                    "extension": {
+                        "type": "string",
+                        "description": "Filter by file extension",
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of results",
+                        "default": 50,
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
             name="fd_count",
-            description="Count files matching a pattern using fd.",
+            description="Count files matching a pattern using fd. Faster than 'find | wc -l'. "
+            "Replaces: find | wc -l, find -print | wc -l commands.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -186,6 +503,12 @@ async def list_tools() -> list[Tool]:
         ),
     ]
 
+    # Only include fd_search_content if ripgrep is available
+    if not RG_CMD:
+        tools = [t for t in tools if t.name != "fd_search_content"]
+
+    return tools
+
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
@@ -205,6 +528,44 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         )
         max_results = arguments.get("max_results", 100)
         output = run_fd(cmd, max_results)
+        return [TextContent(type="text", text=output)]
+
+    elif name == "fd_search_content":
+        output = run_fd_with_content_search(
+            search_pattern=arguments["search_pattern"],
+            file_pattern=arguments.get("file_pattern", ""),
+            path=arguments.get("path", "."),
+            extension=arguments.get("extension"),
+            file_type=arguments.get("type"),
+            hidden=arguments.get("hidden", False),
+            no_ignore=arguments.get("no_ignore", False),
+            case_sensitive=arguments.get("case_sensitive", False),
+            context_lines=arguments.get("context_lines", 0),
+            max_results=arguments.get("max_results", 100),
+        )
+        return [TextContent(type="text", text=output)]
+
+    elif name == "fd_exec":
+        output = run_fd_exec(
+            command=arguments["command"],
+            pattern=arguments.get("pattern", ""),
+            path=arguments.get("path", "."),
+            file_type=arguments.get("type"),
+            extension=arguments.get("extension"),
+            hidden=arguments.get("hidden", False),
+            no_ignore=arguments.get("no_ignore", False),
+            max_files=arguments.get("max_files", 100),
+        )
+        return [TextContent(type="text", text=output)]
+
+    elif name == "fd_recent_files":
+        output = find_recent_files(
+            path=arguments.get("path", "."),
+            hours=arguments.get("hours", 24),
+            file_type=arguments.get("type"),
+            extension=arguments.get("extension"),
+            max_results=arguments.get("max_results", 50),
+        )
         return [TextContent(type="text", text=output)]
 
     elif name == "fd_count":

@@ -80,7 +80,9 @@ Or run directly:
 
 ### fd_search
 
-Search for files and directories.
+**Replaces: `find`, `locate` commands**
+
+Search for files and directories using fd (5-10x faster than find).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -96,12 +98,67 @@ Search for files and directories.
 | absolute_path | bool | Return absolute paths |
 | max_results | int | Limit results (default: 100) |
 
+### fd_search_content ⭐
+
+**Replaces: `find -exec grep`, `find | xargs grep` commands**
+
+Search for content within files using fd+ripgrep. This is the key tool that replaces `find . -exec grep pattern {} \;` style commands.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| search_pattern | string | Text/regex to search in files (required) |
+| file_pattern | string | Filter files by name pattern |
+| path | string | Search directory (default: ".") |
+| extension | string | Filter by extension (e.g., "py", "js") |
+| type | string | Filter by type (f=file, d=dir, etc.) |
+| hidden | bool | Include hidden files |
+| no_ignore | bool | Don't respect .gitignore |
+| case_sensitive | bool | Case-sensitive search |
+| context_lines | int | Lines of context around matches |
+| max_results | int | Max files to search (default: 100) |
+
+**Note:** Requires `ripgrep` (rg) to be installed.
+
+### fd_exec
+
+**Replaces: `find -exec`, `find | xargs` commands**
+
+Execute a command on files found by fd. Use `{}` as placeholder for filename.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| command | string | Command to run (use {} for filename) |
+| pattern | string | File name pattern |
+| path | string | Search directory (default: ".") |
+| type | string | Filter by type |
+| extension | string | Filter by extension |
+| hidden | bool | Include hidden files |
+| no_ignore | bool | Don't respect .gitignore |
+| max_files | int | Max files to process (default: 100) |
+
+### fd_recent_files
+
+**Replaces: `find -mtime`, `find -newermt` commands**
+
+Find recently modified files.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| path | string | Search directory (default: ".") |
+| hours | int | Modified within N hours (default: 24) |
+| type | string | Filter by type |
+| extension | string | Filter by extension |
+| max_results | int | Limit results (default: 50) |
+
 ### fd_count
+
+**Replaces: `find | wc -l` commands**
 
 Count files matching a pattern.
 
 ## Examples
 
+### Basic File Search
 Find all Python files:
 ```
 fd_search(extension="py")
@@ -116,6 +173,65 @@ List directories only:
 ```
 fd_search(type="d", max_depth=2)
 ```
+
+### Content Search (replaces find -exec grep)
+
+Find "TODO" in all Python files:
+```
+fd_search_content(search_pattern="TODO", extension="py")
+```
+
+Find "import React" in JavaScript/TypeScript files with context:
+```
+fd_search_content(
+    search_pattern="import.*React",
+    extension="tsx",
+    context_lines=2
+)
+```
+
+Find error handling in specific directory:
+```
+fd_search_content(
+    search_pattern="try.*except",
+    path="src/",
+    extension="py"
+)
+```
+
+### Execute Commands on Files
+
+Count lines in all Python files:
+```
+fd_exec(command="wc -l {}", extension="py")
+```
+
+Format all JavaScript files:
+```
+fd_exec(command="prettier --write {}", extension="js")
+```
+
+### Find Recent Changes
+
+Files modified in last 2 hours:
+```
+fd_recent_files(hours=2)
+```
+
+Recent Python files modified in last day:
+```
+fd_recent_files(hours=24, extension="py")
+```
+
+## Command Replacements
+
+| Old Command | New MCP Tool |
+|-------------|--------------|
+| `find . -name "*.py"` | `fd_search(extension="py")` |
+| `find . -type f -exec grep "TODO" {} \;` | `fd_search_content(search_pattern="TODO")` |
+| `find . -name "*.js" -exec prettier {} \;` | `fd_exec(command="prettier {}", extension="js")` |
+| `find . -mtime -1` | `fd_recent_files(hours=24)` |
+| `find . -type f \| wc -l` | `fd_count(type="f")` |
 
 ## License
 
