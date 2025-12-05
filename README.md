@@ -42,6 +42,20 @@ brew install fd
 pacman -S fd
 ```
 
+Install ripgrep (required for `fd_search_content` tool):
+```bash
+# Ubuntu/Debian
+sudo apt install ripgrep
+
+# macOS
+brew install ripgrep
+
+# Arch
+pacman -S ripgrep
+
+# Or download from: https://github.com/BurntSushi/ripgrep/releases
+```
+
 ## Installation
 
 ```bash
