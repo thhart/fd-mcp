@@ -7,10 +7,17 @@
 - Updated all documentation examples to include both required parameters
 - Pattern parameter now explicitly documented to use `".*"` or `""` for matching all files
 
+### Announced
+- **Recursive search support**: All fd-mcp tools support recursive directory traversal by default
+- Added `max_depth` parameter documentation for controlling recursion depth
+- Highlighted that no special flags are needed for recursive searching (unlike traditional `find -r`)
+
 ### Documentation
 - Added new "Tip 1: Required Parameters" section in CLAUDE.md with examples
+- Added new "Tip 3: Recursive Search" section in CLAUDE.md with depth control examples
 - Updated README.md with parameter tables showing required fields
 - Updated all code examples across README.md and CLAUDE.md to use required parameters
+- Added "Recursive by Default" to feature highlights in README.md
 
 ## [0.2.1] - 2025-12-06
 

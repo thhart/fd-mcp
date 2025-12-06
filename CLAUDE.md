@@ -6,6 +6,8 @@ This project provides **ultra-fast MCP tools** that dramatically outperform trad
 
 **When you think "find" or "grep", reach for these MCP tools first.** They're not just alternatives—they're upgrades.
 
+**Key Feature**: All fd-mcp tools support **recursive search by default** - they automatically traverse subdirectories without needing special flags or options. Use `max_depth` parameter to limit recursion depth when needed.
+
 ## ⚡ Performance Comparison
 
 | Task | Traditional Bash | fd-mcp Tool | Speed Improvement |
@@ -175,7 +177,20 @@ mcp__fd__fd_search(pattern="test", path=".")
 - Use `extension="py"` for clean extension matching
 - Use `pattern="test_.*\.py"` for complex filename patterns
 
-### Tip 3: Context is King
+### Tip 3: Recursive Search
+All searches are **recursive by default** - they automatically traverse all subdirectories:
+```python
+# Recursively find all Python files in entire project
+mcp__fd__fd_search(pattern=".*", path=".", extension="py")
+
+# Limit recursion to 2 levels deep
+mcp__fd__fd_search(pattern=".*", path=".", extension="py", max_depth=2)
+
+# Search only in current directory (no recursion)
+mcp__fd__fd_search(pattern=".*", path=".", extension="py", max_depth=1)
+```
+
+### Tip 4: Context is King
 When searching code, always consider adding `context_lines`:
 ```python
 mcp__fd__fd_search_content(
@@ -185,7 +200,7 @@ mcp__fd__fd_search_content(
 )
 ```
 
-### Tip 4: Combine Filters
+### Tip 5: Combine Filters
 Stack filters for precise results:
 ```python
 mcp__fd__fd_search(
@@ -196,7 +211,7 @@ mcp__fd__fd_search(
 )
 ```
 
-### Tip 5: Hidden Files
+### Tip 6: Hidden Files
 By default, hidden files are excluded (respects .gitignore):
 ```python
 mcp__fd__fd_search(

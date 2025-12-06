@@ -11,6 +11,7 @@ fd-mcp bridges [fd](https://github.com/sharkdp/fd) with AI assistants like Claud
 fd offers significant advantages over traditional file search tools:
 
 - **Blazing Fast**: Written in Rust, fd is often 5-10x faster than `find` for typical searches
+- **Recursive by Default**: Searches directories recursively without special flags (use `max_depth` to limit)
 - **User-Friendly Syntax**: Simple, intuitive patterns instead of cryptic flags (`fd pattern` vs `find -name "*pattern*"`)
 - **Smart Defaults**: Automatically respects `.gitignore` and skips hidden files/directories
 - **Colorized Output**: Enhanced readability with syntax highlighting
@@ -143,7 +144,7 @@ The tools are optimized for AI assistant workflows:
 
 **Replaces: `find`, `locate` commands**
 
-Search for files and directories using fd (5-10x faster than find).
+Search for files and directories using fd (5-10x faster than find). **Searches recursively by default** through all subdirectories.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -228,19 +229,24 @@ Count files matching a pattern.
 ## Examples
 
 ### Basic File Search
-Find all Python files:
+Find all Python files (recursively):
 ```
 fd_search(pattern=".*", path=".", extension="py")
 ```
 
-Find test files:
+Find test files in entire project tree:
 ```
 fd_search(pattern="test_.*", path=".", extension="py")
 ```
 
-List directories only:
+List directories only (limit to 2 levels deep):
 ```
 fd_search(pattern=".*", path=".", type="d", max_depth=2)
+```
+
+Search only current directory (no recursion):
+```
+fd_search(pattern=".*", path=".", extension="py", max_depth=1)
 ```
 
 ### Content Search (replaces find -exec grep)
