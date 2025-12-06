@@ -10,10 +10,10 @@ This project provides **ultra-fast MCP tools** that dramatically outperform trad
 
 | Task | Traditional Bash | fd-mcp Tool | Speed Improvement |
 |------|-----------------|-------------|-------------------|
-| Find all Python files | `find . -name "*.py"` | `mcp__fd__fd_search(extension="py")` | **5-10x faster** |
+| Find all Python files | `find . -name "*.py"` | `mcp__fd__fd_search(pattern=".*", path=".", extension="py")` | **5-10x faster** |
 | Search code for pattern | `find . -exec grep "TODO" {} \;` | `mcp__fd__fd_search_content(search_pattern="TODO")` | **10-100x faster** |
 | Find recent changes | `find . -mtime -1` | `mcp__fd__fd_recent_files(hours=24)` | **3-5x faster** |
-| Count files | `find . -type f \| wc -l` | `mcp__fd__fd_count(type="f")` | **5-8x faster** |
+| Count files | `find . -type f \| wc -l` | `mcp__fd__fd_count(pattern=".*", path=".", type="f")` | **5-8x faster** |
 
 ## 🧠 Decision Tree: Which Tool to Use?
 
@@ -42,7 +42,7 @@ find . -type f -name "*.py"
 
 ✅ **New way (MCP):**
 ```python
-mcp__fd__fd_search(extension="py")
+mcp__fd__fd_search(pattern=".*", path=".", extension="py")
 ```
 
 **Why better:** Faster, respects .gitignore, parallel execution, cleaner syntax.
@@ -104,6 +104,7 @@ find . -name "test_*.py" -exec wc -l {} \;
 mcp__fd__fd_exec(
     command="wc -l {}",
     pattern="test_.*",
+    path=".",
     extension="py"
 )
 ```
@@ -154,11 +155,27 @@ When you catch yourself about to type:
 
 ## 💡 Advanced Tips
 
-### Tip 1: Extension vs Pattern
+### Tip 1: Required Parameters
+Both `fd_search` and `fd_count` require `pattern` and `path` parameters:
+- **pattern**: Use `".*"` or `""` to match all files, or provide a specific regex pattern
+- **path**: Specify the directory to search (e.g., `"."` for current directory, `"src/"` for src folder)
+
+```python
+# Match all files in current directory
+mcp__fd__fd_search(pattern=".*", path=".")
+
+# Match Python files in src/
+mcp__fd__fd_search(pattern=".*", path="src/", extension="py")
+
+# Match files containing 'test' in name
+mcp__fd__fd_search(pattern="test", path=".")
+```
+
+### Tip 2: Extension vs Pattern
 - Use `extension="py"` for clean extension matching
 - Use `pattern="test_.*\.py"` for complex filename patterns
 
-### Tip 2: Context is King
+### Tip 3: Context is King
 When searching code, always consider adding `context_lines`:
 ```python
 mcp__fd__fd_search_content(
@@ -168,22 +185,23 @@ mcp__fd__fd_search_content(
 )
 ```
 
-### Tip 3: Combine Filters
+### Tip 4: Combine Filters
 Stack filters for precise results:
 ```python
 mcp__fd__fd_search(
     pattern="config",      # Name contains 'config'
-    extension="json",      # JSON files only
     path="src/",          # In src/ directory
+    extension="json",      # JSON files only
     max_depth=2           # Don't go too deep
 )
 ```
 
-### Tip 4: Hidden Files
+### Tip 5: Hidden Files
 By default, hidden files are excluded (respects .gitignore):
 ```python
 mcp__fd__fd_search(
     pattern="secret",
+    path=".",
     hidden=True,        # Include .env, .secrets, etc.
     no_ignore=True      # Ignore .gitignore rules
 )

@@ -106,7 +106,7 @@ The project includes helpful slash commands to get started:
 #### Tool Selection Guide
 
 **When Claude Code needs to find files:**
-- ✅ **Use:** `mcp__fd__fd_search(extension="py")`
+- ✅ **Use:** `mcp__fd__fd_search(pattern=".*", path=".", extension="py")`
 - ❌ **Instead of:** `bash find . -name "*.py"`
 - **Why:** 5-10x faster, respects .gitignore automatically
 
@@ -147,8 +147,8 @@ Search for files and directories using fd (5-10x faster than find).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| pattern | string | Regex pattern (optional) |
-| path | string | Search directory (default: ".") |
+| pattern | string | Regex pattern (required, use ".*" or "" for all) |
+| path | string | Search directory (required, e.g., ".") |
 | type | string | f=file, d=dir, l=symlink, x=exec, e=empty |
 | extension | string | Filter by extension |
 | hidden | bool | Include hidden files |
@@ -217,22 +217,30 @@ Find recently modified files.
 
 Count files matching a pattern.
 
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| pattern | string | Regex pattern (required, use ".*" or "" for all) |
+| path | string | Search directory (required, e.g., ".") |
+| type | string | Filter by type |
+| extension | string | Filter by extension |
+| hidden | bool | Include hidden files |
+
 ## Examples
 
 ### Basic File Search
 Find all Python files:
 ```
-fd_search(extension="py")
+fd_search(pattern=".*", path=".", extension="py")
 ```
 
 Find test files:
 ```
-fd_search(pattern="test_.*", extension="py")
+fd_search(pattern="test_.*", path=".", extension="py")
 ```
 
 List directories only:
 ```
-fd_search(type="d", max_depth=2)
+fd_search(pattern=".*", path=".", type="d", max_depth=2)
 ```
 
 ### Content Search (replaces find -exec grep)
@@ -264,12 +272,12 @@ fd_search_content(
 
 Count lines in all Python files:
 ```
-fd_exec(command="wc -l {}", extension="py")
+fd_exec(command="wc -l {}", pattern=".*", path=".", extension="py")
 ```
 
 Format all JavaScript files:
 ```
-fd_exec(command="prettier --write {}", extension="js")
+fd_exec(command="prettier --write {}", pattern=".*", path=".", extension="js")
 ```
 
 ### Find Recent Changes
@@ -288,11 +296,11 @@ fd_recent_files(hours=24, extension="py")
 
 | Old Command | New MCP Tool |
 |-------------|--------------|
-| `find . -name "*.py"` | `fd_search(extension="py")` |
+| `find . -name "*.py"` | `fd_search(pattern=".*", path=".", extension="py")` |
 | `find . -type f -exec grep "TODO" {} \;` | `fd_search_content(search_pattern="TODO")` |
-| `find . -name "*.js" -exec prettier {} \;` | `fd_exec(command="prettier {}", extension="js")` |
+| `find . -name "*.js" -exec prettier {} \;` | `fd_exec(command="prettier {}", pattern=".*", path=".", extension="js")` |
 | `find . -mtime -1` | `fd_recent_files(hours=24)` |
-| `find . -type f \| wc -l` | `fd_count(type="f")` |
+| `find . -type f \| wc -l` | `fd_count(pattern=".*", path=".", type="f")` |
 
 ## License
 

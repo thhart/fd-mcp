@@ -257,19 +257,18 @@ async def list_tools() -> list[Tool]:
             description="⚡ FAST FILE SEARCH: 5-10x faster than 'find' - Use this for ALL file/directory searches. "
             "Parallel execution with smart defaults (.gitignore respected automatically). "
             "WHEN TO USE: Anytime you think 'find' or need to locate files by name/pattern/type. "
-            "Quick examples: Python files? → extension='py' | Test files? → pattern='test_.*' | Directories? → type='d'. "
+            "Quick examples: Python files? → pattern='.*', path='.', extension='py' | Test files? → pattern='test_.*', path='.' | Directories? → pattern='.*', path='.', type='d'. "
             "Replaces: find, locate commands. This is your go-to tool for file discovery.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "pattern": {
                         "type": "string",
-                        "description": "Search pattern (regex). Leave empty to list all files.",
+                        "description": "Search pattern (regex). Use '.*' or '' to match all files.",
                     },
                     "path": {
                         "type": "string",
-                        "description": "Directory to search in. Defaults to current directory.",
-                        "default": ".",
+                        "description": "Directory to search in (e.g., '.', 'src/', '/home/user/project').",
                     },
                     "type": {
                         "type": "string",
@@ -314,7 +313,7 @@ async def list_tools() -> list[Tool]:
                         "default": 100,
                     },
                 },
-                "required": [],
+                "required": ["pattern", "path"],
             },
         ),
         Tool(
@@ -473,19 +472,18 @@ async def list_tools() -> list[Tool]:
             name="fd_count",
             description="📊 FAST FILE COUNTER: Quickly count files matching patterns (faster than find | wc -l). "
             "WHEN TO USE: Getting file counts, analyzing codebase size, inventory checks. "
-            "Examples: Count Python files → extension='py' | Count all files → type='f' | Count in directory → path='src/'. "
+            "Examples: Count Python files → pattern='.*', path='.', extension='py' | Count all files → pattern='.*', path='.', type='f' | Count in directory → pattern='.*', path='src/'. "
             "Replaces: find | wc -l. Simple, fast, accurate.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "pattern": {
                         "type": "string",
-                        "description": "Search pattern (regex)",
+                        "description": "Search pattern (regex). Use '.*' or '' to match all files.",
                     },
                     "path": {
                         "type": "string",
-                        "description": "Directory to search in",
-                        "default": ".",
+                        "description": "Directory to search in (e.g., '.', 'src/', '/home/user/project').",
                     },
                     "type": {
                         "type": "string",
@@ -501,7 +499,7 @@ async def list_tools() -> list[Tool]:
                         "default": False,
                     },
                 },
-                "required": [],
+                "required": ["pattern", "path"],
             },
         ),
     ]

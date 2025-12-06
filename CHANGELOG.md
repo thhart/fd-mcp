@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2] - 2025-12-06
+
+### Changed
+- **Breaking API change**: Made `pattern` and `path` parameters required for `fd_search` and `fd_count` tools
+- Updated all documentation examples to include both required parameters
+- Pattern parameter now explicitly documented to use `".*"` or `""` for matching all files
+
+### Documentation
+- Added new "Tip 1: Required Parameters" section in CLAUDE.md with examples
+- Updated README.md with parameter tables showing required fields
+- Updated all code examples across README.md and CLAUDE.md to use required parameters
+
 ## [0.2.1] - 2025-12-06
 
 ### Added
