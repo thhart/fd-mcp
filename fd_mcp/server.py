@@ -254,11 +254,11 @@ async def list_tools() -> list[Tool]:
     tools = [
         Tool(
             name="fd_search",
-            description="PREFERRED ALTERNATIVE to 'find' command. Search for files and directories using fd "
-            "(5-10x faster than find). Use this instead of bash 'find' commands. Supports regex patterns, "
-            "file type filtering, respects .gitignore by default, and uses parallel execution. "
-            "Examples: find Python files (extension='py'), find by name pattern (pattern='config.*'), "
-            "list directories (type='d'). Replaces: find, locate commands.",
+            description="⚡ FAST FILE SEARCH: 5-10x faster than 'find' - Use this for ALL file/directory searches. "
+            "Parallel execution with smart defaults (.gitignore respected automatically). "
+            "WHEN TO USE: Anytime you think 'find' or need to locate files by name/pattern/type. "
+            "Quick examples: Python files? → extension='py' | Test files? → pattern='test_.*' | Directories? → type='d'. "
+            "Replaces: find, locate commands. This is your go-to tool for file discovery.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -319,11 +319,11 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="fd_search_content",
-            description="PREFERRED ALTERNATIVE to 'find -exec grep' command. Search for content within files "
-            "using fd+ripgrep (extremely fast). Use this instead of 'find . -exec grep' commands. "
-            "Combines file filtering (by extension, pattern, type) with content search in a single operation. "
-            "Example: find 'TODO' in Python files (search_pattern='TODO', extension='py'). "
-            "Replaces: find -exec grep, find | xargs grep commands.",
+            description="🔍 BLAZING CONTENT SEARCH: Lightning-fast code search using fd+ripgrep (10-100x faster than find -exec grep). "
+            "WHEN TO USE: Searching for text/code patterns across multiple files. This is THE tool for 'grep in files'. "
+            "One-shot operation: filters files AND searches content simultaneously. "
+            "Example: Find 'TODO' in Python → search_pattern='TODO', extension='py' | Find imports → search_pattern='import.*React'. "
+            "Replaces: find -exec grep, find | xargs grep, recursive grep. Always prefer this over bash grep commands.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -381,11 +381,11 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="fd_exec",
-            description="PREFERRED ALTERNATIVE to 'find -exec' command. Execute a command on files found by fd. "
-            "Use this instead of 'find -exec' or 'find | xargs' commands. Faster and safer than find -exec. "
-            "Use {} in command as placeholder for filename. "
-            "Example: run command on Python files (command='wc -l {}', extension='py'). "
-            "Replaces: find -exec, find | xargs commands.",
+            description="⚙️ FAST BULK OPERATIONS: Execute commands on multiple files (faster & safer than find -exec). "
+            "WHEN TO USE: Need to run a command on many files matching a pattern (format, count, process, etc.). "
+            "Use {} as filename placeholder. Built-in safety limits prevent runaway operations. "
+            "Examples: Count lines in Python files → command='wc -l {}', extension='py' | Format JS → command='prettier {}', extension='js'. "
+            "Replaces: find -exec, find | xargs. Modern replacement for batch file operations.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -433,10 +433,11 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="fd_recent_files",
-            description="Find recently modified files using fd. Faster alternative to 'find -mtime' or 'find -newermt'. "
-            "Useful for finding recent changes in a codebase. "
-            "Example: files changed in last 24 hours (hours=24, extension='py'). "
-            "Replaces: find -mtime, find -newermt commands.",
+            description="🕐 RECENT CHANGES FINDER: Instantly find recently modified files (faster than find -mtime). "
+            "WHEN TO USE: Investigating recent changes, debugging 'what changed?', reviewing work, finding active files. "
+            "Time-based filtering with simple hour parameter. "
+            "Examples: Last 2 hours → hours=2 | Today's work → hours=24 | Recent Python changes → hours=24, extension='py'. "
+            "Replaces: find -mtime, find -newermt. Essential for tracking codebase activity.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -470,8 +471,10 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="fd_count",
-            description="Count files matching a pattern using fd. Faster than 'find | wc -l'. "
-            "Replaces: find | wc -l, find -print | wc -l commands.",
+            description="📊 FAST FILE COUNTER: Quickly count files matching patterns (faster than find | wc -l). "
+            "WHEN TO USE: Getting file counts, analyzing codebase size, inventory checks. "
+            "Examples: Count Python files → extension='py' | Count all files → type='f' | Count in directory → path='src/'. "
+            "Replaces: find | wc -l. Simple, fast, accurate.",
             inputSchema={
                 "type": "object",
                 "properties": {
