@@ -1,6 +1,6 @@
 [project]
 name = "fd-mcp"
-version = "0.2.2"
+version = "0.2.3"
 description = "MCP server for fast file search using fd - a modern find alternative"
 readme = "README.md"
 requires-python = ">=3.10"

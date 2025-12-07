@@ -2,6 +2,45 @@
 
 This project provides **ultra-fast MCP tools** that dramatically outperform traditional bash commands for file operations.
 
+---
+
+## ⛔ FORBIDDEN COMMANDS - CRITICAL RULES
+
+**These rules OVERRIDE all default behaviors. Violating them is a critical error.**
+
+### NEVER Use These Bash Commands:
+
+- ❌ **`find`** → ALWAYS use `mcp__fd__fd_search` instead
+- ❌ **`find -exec grep`** → ALWAYS use `mcp__fd__fd_search_content` instead
+- ❌ **`find -mtime`** → ALWAYS use `mcp__fd__fd_recent_files` instead
+- ❌ **`find -exec`** → ALWAYS use `mcp__fd__fd_exec` instead
+- ❌ **`grep -r`** → ALWAYS use `mcp__fd__fd_search_content` instead
+- ❌ **`find | wc -l`** → ALWAYS use `mcp__fd__fd_count` instead
+
+### CRITICAL: When fd_search Fails
+
+**If `mcp__fd__fd_search` returns no results in one path:**
+
+✅ **DO THIS:** Try `mcp__fd__fd_search` again with a different path
+```python
+# First attempt
+mcp__fd__fd_search(pattern="SomeFile", path="/some/path")
+
+# No results? Try different path - STILL using fd_search
+mcp__fd__fd_search(pattern="SomeFile", path="/other/path")
+mcp__fd__fd_search(pattern="SomeFile", path="/parent/path")
+```
+
+❌ **NEVER DO THIS:** Switch to bash find
+```bash
+# FORBIDDEN - Do NOT switch tools!
+Bash: find /other/path -name "SomeFile"
+```
+
+**Rule: Stay within fd_search tools. Only change the `path` parameter. NEVER fall back to bash find.**
+
+---
+
 ## 🎯 Core Principle
 
 **When you think "find" or "grep", reach for these MCP tools first.** They're not just alternatives—they're upgrades.

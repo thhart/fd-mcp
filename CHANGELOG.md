@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.3] - 2025-12-07
+
+### Enhanced
+- **CLAUDE.md enforcement**: Added "FORBIDDEN COMMANDS - CRITICAL RULES" section to prevent Claude from falling back to bash `find` commands
+- Explicit prohibition of bash commands with clear alternatives (find → fd_search, grep -r → fd_search_content, etc.)
+- Added critical rule: When fd_search fails at one path, retry with different paths using fd_search (never switch to bash find)
+- Enhanced documentation with DO/DON'T examples showing correct pattern of staying within fd-mcp tools
+
+### Documentation
+- Added prominent enforcement section at top of CLAUDE.md with strong language (NEVER, ALWAYS, CRITICAL)
+- Included code examples demonstrating correct behavior when search fails
+- Strengthened instructions to override default behaviors and prevent tool switching
+
 ## [0.2.2] - 2025-12-06
 
 ### Changed
